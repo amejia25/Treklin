@@ -2,6 +2,11 @@ import * as FileSystem from 'expo-file-system';
 
 const GPX_FILE_PATH = `${FileSystem.documentDirectory}myGPXFile.gpx`;
 
+const doesGPXFileExist = async () => {
+  const fileInfo = await FileSystem.getInfoAsync(GPX_FILE_PATH);
+  return fileInfo.exists;
+};
+
 const createNewGPXFile = async () => {
   const initialContent = `<?xml version="1.0" encoding="UTF-8"?>
   <gpx version="1.1" creator="YourApp">
@@ -23,4 +28,5 @@ const addWaypointToGPX = async (latitude, longitude, rating) => {
   await FileSystem.writeAsStringAsync(GPX_FILE_PATH, fileContent);
 };
 
-export { createNewGPXFile, addWaypointToGPX, GPX_FILE_PATH };
+export { GPX_FILE_PATH, createNewGPXFile, addWaypointToGPX, doesGPXFileExist };
+

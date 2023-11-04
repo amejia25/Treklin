@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { pickImage } from './ImageImport';
-import { createNewGPXFile, addWaypointToGPX, GPX_FILE_PATH } from './GPXManager';
+import { doesGPXFileExist, createNewGPXFile, addWaypointToGPX, GPX_FILE_PATH } from './GPXManager';
 
 
 
@@ -42,6 +42,17 @@ const GPXWaypoints = () => {
     const [elapsedTime, setElapsedTime] =useState(0);
     const timerRef = useRef(null);
   
+
+
+  useEffect(() => {
+    (async () => {
+      const gpxExists = await doesGPXFileExist();
+      if (gpxExists) {
+        // Load the existing GPX file
+        await importGPXFileFromPath(GPX_FILE_PATH);
+      }
+    })();
+  }, []);
 
   //Start timer function
   const startTimer = () => {
@@ -170,7 +181,53 @@ const GPXWaypoints = () => {
     }
   };
 
+  const importGPXFileFromPath = async (path) => {
+    try {
+      const fileContent = await FileSystem.readAsStringAsync(path);
+      // Extracting waypoints
+      const waypointRegex = /<wpt lat="([-.\d]+)" lon="([-.\d]+)".*?<name>([^<]+)<\/name>(?:.*?<rating>(\d)<\/rating>)?/gs;
+      const matches = Array.from(fileContent.matchAll(waypointRegex));
+      const newWaypoints = matches.map((match, index) => ({
+          id: index.toString(),
+          latitude: parseFloat(match[1]),
+          longitude: parseFloat(match[2]),
+          name: match[3] || 'Unnamed Waypoint',
+          rating: match[4] ? parseInt(match[4]) : 2
+        }));
+
+      // Extracting routes
+      const routeRegex = /<rtept[^>]*lat="([-.\d]+)"[^>]*lon="([-.\d]+)"[^>]*>/g;
+      const routeMatches = Array.from(fileContent.matchAll(routeRegex));
+      const newRoutes = routeMatches.map(match => ({
+        latitude: parseFloat(match[1]),
+        longitude: parseFloat(match[2]),
+      }));
+
+  
+      setWaypoints(newWaypoints);
+      setRoutes(newRoutes);
+
+      if (newRoutes.length > 0) {
+        const startCoordinate = newRoutes[0];
+        mapRef.current.animateToRegion({
+          latitude: startCoordinate.latitude,
+          longitude: startCoordinate.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
+    } catch (error) {
+      console.error('Error importing GPX file:', error);
+    }
+  };
+
+
   const startJog = async () => {
+    const gpxExists = await doesGPXFileExist();
+    if (!imported || !gpxExists) {
+      await createNewGPXFile();
+    }
+
     if (!imported) {
       Alert.alert(
         'Start Route',
@@ -213,9 +270,11 @@ const GPXWaypoints = () => {
         { cancelable: false }
       );
     } else {
+      setIsCycling(true);
+      startTimer();
       Alert.alert(
         'Start Jog',
-        'Jog started!',
+        'Route started!',
         [
           {text: 'OK'}
         ],
