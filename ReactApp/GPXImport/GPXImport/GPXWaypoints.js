@@ -88,6 +88,10 @@ const GPXWaypoints = () => {
       };
       setUserLocation(userLoc);
       setMapRegion(userLoc);
+
+      if (mapRef.current) {
+        mapRef.current.animateToRegion(userLoc);
+      }
     })();
   }, []);
 
