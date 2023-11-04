@@ -5,6 +5,8 @@ import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { pickImage } from './ImageImport';
+import { createNewGPXFile, addWaypointToGPX, GPX_FILE_PATH } from './GPXManager';
+
 
 
 //Check how far the user is from a route start.
@@ -63,12 +65,32 @@ const GPXWaypoints = () => {
     stopTimer(); 
   };
 
-  const goodMarkerPress = () => {
-    Alert.alert('Not Yet Implemented');
+  const goodMarkerPress = async () => {
+    await addWaypointToGPX(userLocation.latitude, userLocation.longitude, 3);
+    setWaypoints(prevWaypoints => [
+      ...prevWaypoints,
+      {
+        id: Date.now().toString(), // Generate a unique ID using the current timestamp
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        name: "Good Waypoint",
+        rating: 3
+      }
+    ]);
   };
 
-  const badMarkerPress = () => {
-    Alert.alert('Not Yet Implemented');
+  const badMarkerPress = async () => {
+    await addWaypointToGPX(userLocation.latitude, userLocation.longitude, 1);
+    setWaypoints(prevWaypoints => [
+      ...prevWaypoints,
+      {
+        id: Date.now().toString(), // Generate a unique ID using the current timestamp
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        name: "Bad Waypoint",
+        rating: 1
+      }
+    ]);
   };
 
   //Get the user's location.
@@ -148,7 +170,7 @@ const GPXWaypoints = () => {
     }
   };
 
-  const startJog = () => {
+  const startJog = async () => {
     if (!imported) {
       Alert.alert(
         'Start Route',
@@ -168,6 +190,7 @@ const GPXWaypoints = () => {
         ],
         { cancelable: true }
       );
+      await createNewGPXFile();
       return;
     }
   
