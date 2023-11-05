@@ -3,6 +3,7 @@ import { Button, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Camera, CameraType } from 'expo-camera';
 
 const CaptureImageDrawer = () => {
+  Camera.getCameraPermissionsAsync();
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
 
