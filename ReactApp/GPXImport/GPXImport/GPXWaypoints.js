@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect} from 'react';
-import { View, Platform, StyleSheet, Alert, TouchableOpacity, Text, ActivityIndicator, Image} from 'react-native';
+import { View, Platform, StyleSheet, Alert, TouchableOpacity, Text, ActivityIndicator, Image, Dimensions} from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import FlashMessage from 'react-native-flash-message';
 import { showMessage } from 'react-native-flash-message';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as ScreenOrient from 'expo-screen-orientation';
 import { Gesture, GestureDetector, Directions } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
-import { doesGPXFileExist, createNewGPXFile, addWaypointToGPX, GPX_FILE_PATH, addTrackToGPX, addTrackPointToGPX, createInitGPX, deleteWaypointFromGPX, deleteAllImportedPhotos } from './GPXManager';
-import { deleteFile, photoWaypointsFile, photoLocalStore } from './GPXFileList';
+import { doesGPXFileExist, createNewGPXFile, addWaypointToGPX, GPX_FILE_PATH, addTrackToGPX, addTrackPointToGPX, createInitGPX, deleteWaypointFromGPX, deleteAllImportedPhotos, createdGPXDirectory } from './GPXManager';
+import { deleteFile, photoWaypointsFile, photoLocalStore } from './GPXFileList';  
 import { pickImage } from './ImageImport';
 import WaypointModal from './WaypointModal';
 import GPXNameModal from './GPXNameModal';
@@ -44,7 +44,7 @@ export const recordActiveFile = "locks/lock-record.txt";
 const GPXWaypoints = ({ navigation, route }) => {
   const handleGPXNameConfirm = async (fileName) => {
     // Rename the GPX file here using FileSystem from 'expo-file-system'
-    const newPath = `${FileSystem.documentDirectory}${fileName}.gpx`;
+    const newPath = `${createdGPXDirectory}${fileName}.gpx`;
     try {
       await FileSystem.moveAsync({
         from: currentGPXPath,
@@ -114,6 +114,7 @@ const GPXWaypoints = ({ navigation, route }) => {
   //GPX name Modal states
   const [gpxNameModalVisible, setGpxNameModalVisible] = useState(false);
 
+  const screenWidth = Dimensions.get('window').width;
   // // DECLARED TWICE FOR SOME REASON. COMMENTING OUT FOR NOW JUST IN CASE IT BREAKS SOMETHING. 
   // // Modal activity at the end of route-recording.
   // const handleGPXNameConfirm = async (fileName) => {
@@ -1143,11 +1144,12 @@ const GPXWaypoints = ({ navigation, route }) => {
         padding: 10,
         borderRadius: 10,
         zIndex: 1,
-        maxWidth: 150
+        width: screenWidth - 150
       }}>
         <Text style={{
           fontSize: 36,
-          color: 'white'
+          color: 'white',
+          textAlign: 'center'
         }}>
           {formattedTime}
         </Text>
@@ -1315,6 +1317,8 @@ const GPXWaypoints = ({ navigation, route }) => {
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         }}
+        provider={PROVIDER_GOOGLE}
+        scrollDuringRotateOrZoomEnabled={false}
         mapPitch={0}
         mapRotation={mapRotation}
         onRegionChangeComplete={(region) => {

@@ -2,10 +2,11 @@ import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
-
 import { photoLocalStore } from './GPXFileList';
 
-const GPX_FILE_PATH = `${FileSystem.documentDirectory}mainGPXFile.gpx`;
+export const importedGPXDirectory = `${FileSystem.documentDirectory}imported/`;
+export const createdGPXDirectory = `${FileSystem.documentDirectory}created/`;
+const GPX_FILE_PATH = `${FileSystem.documentDirectory}created/mainGPXFile.gpx`;
 const FILE_COUNTER_KEY = 'FILE_COUNTER_KEY';
 
 const getNewGPXFileName = async () => {
@@ -44,26 +45,41 @@ const doesGPXFileExist = async () => {
 
 const createInitGPX = async () => {
   const initialContent = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="YourApp">
-</gpx>`;
+  <gpx version="1.1" creator="YourApp">
+  </gpx>`;
+  try {
+    const dirInfo = await FileSystem.getInfoAsync(createdGPXDirectory);
+    if (!dirInfo.exists) {
+      console.log('Creating directory:', createdGPXDirectory);
+      await FileSystem.makeDirectoryAsync(createdGPXDirectory, { intermediates: true });
+    }
 
-  await FileSystem.writeAsStringAsync(GPX_FILE_PATH, initialContent);
+    await FileSystem.writeAsStringAsync(GPX_FILE_PATH, initialContent);
+  }catch (e) {
+    console.error('Error creating new GPX file:', error);
+    throw error;  
+  }
+  
 };
 
 const createNewGPXFile = async () => {
-  //console.log('Creating new GPX file...');
   try {
-    const newFileName = await getNewGPXFileName();
-    const newFilePath = `${FileSystem.documentDirectory}${newFileName}`;
+    // Ensure the directory exists
+    const dirInfo = await FileSystem.getInfoAsync(createdGPXDirectory);
+    if (!dirInfo.exists) {
+      console.log('Creating directory:', createdGPXDirectory);
+      await FileSystem.makeDirectoryAsync(createdGPXDirectory, { intermediates: true });
+    }
 
+    const newFileName = await getNewGPXFileName();
+    const newFilePath = `${createdGPXDirectory}${newFileName}`;
     await FileSystem.writeAsStringAsync(newFilePath, INITIAL_GPX_CONTENT);
-    console.log('GPX file created at:', newFilePath); // Log the new file path
-    return newFilePath; // Return the new file path for further use
+    console.log('GPX file created at:', newFilePath);
+    return newFilePath;
   } catch (error) {
     console.error('Error creating new GPX file:', error);
-    throw error; // Re-throw the error to handle it in the calling function
+    throw error;
   }
-
 };
 
 const deleteWaypointFromGPX = async (filePath, id) => {

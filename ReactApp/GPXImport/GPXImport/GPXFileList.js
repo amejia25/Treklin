@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, TouchableOpacity, Platform, FlatList, PermissionsAndroid } from 'react-native';
+import React, { useState, useEffect, useRef} from 'react';
+import { Alert, View, Text, TouchableOpacity, Platform, FlatList, PermissionsAndroid, StyleSheet, Image, Animated, Dimensions} from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { Button } from 'react-native';
 import * as MediaLibrary from 'expo-media-library'; 
@@ -9,15 +9,26 @@ import { Gesture, GestureDetector, Directions } from 'react-native-gesture-handl
 import { runOnJS } from 'react-native-reanimated';
 
 import { pickImage } from './ImageImport';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 
 //Filename constants
 export const photoWaypointsFile = "importedPhotos.gpx";
 export const photoLocalStore = "ImportedPhotos/";
 
+export const importedGPXDirectory = `${FileSystem.documentDirectory}imported/`;
+export const createdGPXDirectory = `${FileSystem.documentDirectory}created/`;
+const screenWidth = Dimensions.get('window').width;
+
 // Deletes a single file
-export const deleteFile = async (fileName) => {
+export const deleteFile = async (fileName, directory) => {
   try {
-    const fullPath = fileName.startsWith('file://') ? fileName : `${FileSystem.documentDirectory}${fileName}`;
+    let fullPath = '';
+    if(directory === 'created'){
+      fullPath = fileName.startsWith('file://') ? fileName : `${createdGPXDirectory}${fileName}`;
+    } else {
+      fullPath = fileName.startsWith('file://') ? fileName : `${importedGPXDirectory}${fileName}`;
+    }
+    
     
     await FileSystem.deleteAsync(fullPath);
     //refreshFileList(); // Refresh the list after deleting the file
@@ -34,7 +45,7 @@ const schemaComplianceEdit = async ( uri ) => {
     //segment file contents into lines and manage accordingly
     let fileContents = await FileSystem.readAsStringAsync(uri);
     let fileData = fileContents.split(/[\r\n]+/).map((text) => {return text.trim();});
-    console.log(fileData);
+    //console.log(fileData);
     let wptStarts = [], wptEnds = [], wptList = [], newContents = [];
     var i;
     for (i = 0; i < fileData.length; i++) {
@@ -105,11 +116,86 @@ const iosShare = async (uri, utiType) => {
   }
 }
 
+//GPXFileList cloud animation
+const CloudAnimation = () => {
+  const cloudPosition = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const runAnimation = () => {
+      cloudPosition.setValue(0);  
+
+      Animated.timing(cloudPosition, {
+        toValue: 1,
+        duration: 8000,
+        useNativeDriver: true
+      }).start(() => runAnimation());
+    };
+
+    runAnimation();
+    return () => cloudPosition.stopAnimation();
+  }, []);
+
+  return (
+    <Animated.Image
+      source={require('./assets/icons/cloud.png')}
+      style={{
+        position: 'absolute',
+        width: 100,
+        height: 100,
+        resizeMode: 'contain',
+        bottom: 170, 
+        transform: [
+          {
+            translateX: cloudPosition.interpolate({
+              inputRange: [0, 1],
+              outputRange: [Dimensions.get('window').width, -200]  
+            })
+          }
+        ]
+      }}
+    />
+  );
+};
+
 const GPXFileList = ({ navigation }) => {
   //File action state
   const [gpxFiles, setGpxFiles] = useState([]);
   //Media library state
   const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState(null);
+  const [activeDirectory, setActiveDirectory] = useState('created'); // 'created' or 'imported'
+  const [expandedItem, setExpandedItem] = useState(null);
+
+  //Footer position for cloud animation
+  const [footerPosition, setFooterPosition] = useState(null);
+  const footerRef = useRef();
+
+  const ensureDirectoryExists = async (directory) => {
+    const dir = `${FileSystem.documentDirectory}${directory}/`;
+    const dirInfo = await FileSystem.getInfoAsync(dir);
+    if (!dirInfo.exists) {
+      console.log(`Directory does not exist, creating: ${dir}`);
+      await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+    }
+  };
+
+  const loadFilesFromDirectory = async (directory) => {
+    try {
+      await ensureDirectoryExists(directory);
+      const dir = `${FileSystem.documentDirectory}${directory}/`;
+      const files = await FileSystem.readDirectoryAsync(dir);
+      const filteredFiles = files.filter(file => file.endsWith('.gpx'));
+      console.log('Files fetched from', directory, ':', filteredFiles);
+      setGpxFiles(filteredFiles);
+    } catch (error) {
+      console.error(`Error reading GPX files from ${directory}: `, error);
+    }
+  };
+
+  useEffect(() => {
+    console.log('Loading Directory Files...');
+    loadFilesFromDirectory(activeDirectory);
+  }, [activeDirectory]);
+
 
   const importGPXFile = async () => {
     try {
@@ -124,12 +210,23 @@ const GPXFileList = ({ navigation }) => {
         console.log('GPX File URI: ', fileUri);
   
         // Copy the file from the temporary cache to the app's document directory
-        const newFileUri = `${FileSystem.documentDirectory}${result.assets[0].name}`;
-        await FileSystem.copyAsync({
-          from: fileUri,
-          to: newFileUri,
-        });
+        try {
+          const dirInfo = await FileSystem.getInfoAsync(importedGPXDirectory);
+          if (!dirInfo.exists) {
+            console.log('Creating directory:', importedGPXDirectory);
+            await FileSystem.makeDirectoryAsync(importedGPXDirectory, { intermediates: true });
+          }
 
+          const newFileUri = `${importedGPXDirectory}${result.assets[0].name}`;
+          await FileSystem.copyAsync({
+            from: fileUri,
+            to: newFileUri,
+          });
+
+        } catch (e) {
+          console.error('Error creating new GPX file:', error);
+      throw error;
+        }
         
         // Refresh the file list to show the new file
         refreshFileList();
@@ -148,7 +245,7 @@ const GPXFileList = ({ navigation }) => {
       //console.log('Fetching files...');
       let files;
       try {
-        files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+        files = await FileSystem.readDirectoryAsync(`${FileSystem.documentDirectory}${activeDirectory}/`);
         const filteredFiles = files.filter(file => file.endsWith('.gpx'));
         setGpxFiles(filteredFiles);
       } catch (error) {
@@ -163,7 +260,7 @@ const GPXFileList = ({ navigation }) => {
 
   const refreshFileList = async () => {
     try {
-      const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+      const files = await FileSystem.readDirectoryAsync(`${FileSystem.documentDirectory}${activeDirectory}/`);
       const filteredFiles = files.filter(file => file.endsWith('.gpx'));
       console.log('Refreshing file list, files to set: ', filteredFiles);
   
@@ -193,9 +290,9 @@ const GPXFileList = ({ navigation }) => {
     This is currently disabled as the user does not need this. Might be useful again in 
     the future so I am just commenting it out. 
   */
-  const logGPXContent = async (fileName) => {
+  const logGPXContent = async (fileName, directory) => {
     try {
-      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+      const fileUri = `${FileSystem.documentDirectory}${directory}/${fileName}`;
       const content = await FileSystem.readAsStringAsync(fileUri);
       console.log(content); 
     } catch (error) {
@@ -204,7 +301,7 @@ const GPXFileList = ({ navigation }) => {
   };
 
   // Asks user to confirm deletion of a single file
-  const confirmDeleteFile = (fileName) => {
+  const confirmDeleteFile = (fileName, directory) => {
     Alert.alert(
       "Confirm Delete",
       `Are you sure you want to delete "${fileName}"?`,
@@ -215,7 +312,7 @@ const GPXFileList = ({ navigation }) => {
           style: "cancel"
         },
         { text: "Yes", onPress: () => {
-          deleteFile(fileName)
+          deleteFile(fileName, directory)
           refreshFileList();} 
         }
       ],
@@ -224,27 +321,27 @@ const GPXFileList = ({ navigation }) => {
   };
 
   // Asks user to confirm deletion of all files
-  const deleteAllFiles = async () => {
+  const deleteAllFiles = async (directory) => {
     Alert.alert(
-      "Confirm Delete",
-      "Are you sure you want to delete all GPX files?",
+      "Confirm Delete ALL",
+      "Are you sure you want to delete ALL GPX files?",
       [
         {
           text: "Cancel",
           onPress: () => console.log("Deletion cancelled"),
           style: "cancel"
         },
-        { text: "Yes", onPress: () => deleteAllFilesConfirmed() }
+        { text: "Yes, Delete All", onPress: () => deleteAllFilesConfirmed(directory) }
       ],
       { cancelable: false }
     );
   };
   
   // Deletes all files
-  const deleteAllFilesConfirmed = async () => {
+  const deleteAllFilesConfirmed = async (directory) => {
     try {
       for (const fileName of gpxFiles) {
-        await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${fileName}`);
+        await FileSystem.deleteAsync(`${FileSystem.documentDirectory}${directory}/${fileName}`);
       }
       refreshFileList(); // Refresh the list after deleting all files
     } catch (error) {
@@ -252,14 +349,20 @@ const GPXFileList = ({ navigation }) => {
     }
   };
 
-  // Function that handles file download
-  const downloadFile = async (fileName) => {
+   // Function that handles file download
+   const downloadFile = async (fileName, directory) => {
     // Request permissions to access the media library
     const mediaLibraryPermission = await MediaLibrary.requestPermissionsAsync();
     setHasMediaLibraryPermission(mediaLibraryPermission.status === "granted");
 
     //filepaths
-    const localUri = `${FileSystem.documentDirectory}${fileName}`;
+    let localUri = `${FileSystem.documentDirectory}${fileName}`;
+    if(directory === 'created'){
+      localUri = `${createdGPXDirectory}${fileName}`;
+    } else {
+      localUri = `${importedGPXDirectory}${fileName}`;
+    }
+    
     const systemUri = `${FileSystem.cacheDirectory}${fileName}`;
 
     //perform slight gpx edits to ensure schema compliance
@@ -347,25 +450,171 @@ const GPXFileList = ({ navigation }) => {
     requestFileSystemPermissions();
   }, []);
 
-  const handleFilePress = (fileName) => {
-    navigation.navigate('Home', { gpxFilePath: fileName , imported: true});
+  //Handle 'tab' switching press
+  const changeDirectory = (newDirectory) => {
+    if (activeDirectory !== newDirectory) {
+      setActiveDirectory(newDirectory);
+      setExpandedItem(null); 
+      loadFilesFromDirectory(newDirectory); 
+    }
   };
 
-  // const renderItem = ({ item }) => (
-  //   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10 }}>
-  //     <TouchableOpacity
-  //       onPress={() => handleFilePress(item)}>
-  //       <Text>{item}</Text>
-  //     </TouchableOpacity>
-  //     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-  //       <Button title="Delete" onPress={() => confirmDeleteFile(item)} /> 
-  //       {/*}
-  //       <Button title="Log Content" onPress={() => logGPXContent(item)} />
-  //       */}
-  //       <Button title="Download" onPress={() => downloadFile(item)} />
-  //     </View>
-  //   </View>
-  // );
+  const handleFilePress = (fileName) => {
+    setExpandedItem(expandedItem === fileName ? null : fileName); // Toggle the expanded item
+  };
+
+  const handleUseFile = (fileName) => {
+    //Reset the page's state
+
+    let tempFileName = fileName;
+    let tempActive = activeDirectory;
+
+    setGpxFiles([]);
+    setActiveDirectory('created');
+    setExpandedItem(null);
+
+    navigation.navigate('Home', { gpxFilePath: `${tempActive}/${tempFileName}`, imported: true });
+  };
+
+  //Map Preview Logic
+  const MapPreview = ({ fileName, directory }) => {
+    const [route, setRoute] = useState([]);
+    const [waypoints, setWaypoints] = useState([]);
+    const [tracks, setTracks] = useState([]);
+    const [initialRegion, setInitialRegion] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+      const loadGPXData = async () => {
+        setIsLoading(true);
+        try {
+          let fullPath = `${FileSystem.documentDirectory}${directory}/${fileName}`;
+          const fileContent = await FileSystem.readAsStringAsync(fullPath);
+          const waypointRegex = /<wpt lat="([-.\d]+)" lon="([-.\d]+)">\s*<name>([^<]+)<\/name>\s*<desc>([^<]+)<\/desc>\s*<rating>(\d+)<\/rating>\s*<id>\d+<\/id>\s*<\/wpt>/g;
+          const routeRegex = /<rtept lat="([-.\d]+)" lon="([-.\d]+)">\s*<name>([^<]+)<\/name>\s*<\/rtept>/g;
+          const trackRegex = /<trkpt lat="([-.\d]+)" lon="([-.\d]+)">/g;
+
+          const waypoints = [];
+          let match;
+          while ((match = waypointRegex.exec(fileContent)) !== null) {
+            waypoints.push({
+              latitude: parseFloat(match[1]),
+              longitude: parseFloat(match[2]),
+              name: match[3],
+              description: match[4],
+              rating: parseInt(match[5], 10),
+            });
+          }
+
+          let route = [];
+          let routeMatch;
+          while ((routeMatch = routeRegex.exec(fileContent)) !== null) {
+            route.push({
+              latitude: parseFloat(routeMatch[1]),
+              longitude: parseFloat(routeMatch[2]),
+            });
+          }
+
+          let tracks = [];
+          let trackMatch;
+          while ((trackMatch = trackRegex.exec(fileContent)) !== null) {
+            tracks.push({
+              latitude: parseFloat(trackMatch[1]),
+              longitude: parseFloat(trackMatch[2]),
+            });
+          }
+
+          setWaypoints(waypoints);
+          setRoute(route);
+          setTracks(tracks);
+
+          if (waypoints.length > 0) {
+            const firstPoint = waypoints[0];
+            setInitialRegion({
+              latitude: firstPoint.latitude,
+              longitude: firstPoint.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            });
+          } else if (route.length > 0) {
+            const firstPoint = route[0];
+            setInitialRegion({
+              latitude: firstPoint.latitude,
+              longitude: firstPoint.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            });
+          } else if (tracks.length > 0) {
+            const firstPoint = tracks[0];
+            setInitialRegion({
+              latitude: firstPoint.latitude,
+              longitude: firstPoint.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            });
+          } else {
+            // If there are no waypoints or
+            setInitialRegion({
+              latitude: 34.0522,
+              longitude: -118.2437,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            });
+          }
+
+          //console.log(waypoints);
+          //console.log(fullPath);
+          //console.log(fileContent);
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error loading GPX data:', error);
+          setIsLoading(false);
+        }
+      };
+  
+      loadGPXData();
+    }, [fileName, directory]);
+    
+    if (isLoading) {
+      return <View style={{ width: '90%', height: 120, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>;
+    }
+
+    //Don't render until map is initlized
+    if (!initialRegion) return null;
+    
+
+    return (
+      <View style={{
+        width: '90%', 
+        height: 120, 
+        minHeight: 120,
+        borderWidth: 1, 
+        borderColor: 'gray', 
+        borderRadius: 5, 
+        overflow: 'hidden', 
+      }}>
+        <MapView
+          style={{ flex: 1 }}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          pitchEnabled={false}
+          rotateEnabled={false}
+          initialRegion={initialRegion}>
+          {waypoints.map((point, index) => (
+            <Marker key={index} coordinate={{ latitude: point.latitude, longitude: point.longitude }} title={point.title} />
+          ))}
+          {route.length > 1 && (
+            <Polyline coordinates={route} strokeColor="#000" strokeWidth={2} />
+          )}
+          {tracks.length > 1 && (
+            <Polyline coordinates={tracks} strokeColor="blue" strokeWidth={2} />
+          )}
+        </MapView>
+      </View>
+    );
+  };
 
   //gesture navigation items
   const navigateUp = () => {
@@ -379,7 +628,7 @@ const GPXFileList = ({ navigation }) => {
     .numberOfPointers(2)
     .onEnd(() => {
       console.log("NavUp");
-      runOnJS(navigateUp)();//NOTE: this method is needed to wrap all navigation actions if called by Gesture handlers
+      runOnJS(navigateUp)();
     });
   const navDown = Gesture.Fling()
     .direction(Directions.DOWN)
@@ -389,43 +638,244 @@ const GPXFileList = ({ navigation }) => {
       runOnJS(navigateDown)();
     }).cancelsTouchesInView(true);
     const twoFlingNav = Gesture.Exclusive(navUp, navDown);
-  
-  const renderItem = ({ item, index }) => (
-    <View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10 }}>
-        <TouchableOpacity onPress={() => handleFilePress(item)}>
-          <Text>{item}</Text>
+
+    //Anchored buttons
+    const DeleteAllButton = ({ onPress, hasFiles }) => {
+      return (
+        <TouchableOpacity
+          style={[
+            styles.deleteAllButton,
+            hasFiles ? {} : { backgroundColor: 'gray' }  
+          ]}
+          onPress={onPress}
+          disabled={!hasFiles} 
+        >
+          <Image
+            source={require('./assets/icons/trash.png')}
+            style={styles.iconStyle}
+          />
         </TouchableOpacity>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Button title="Delete" onPress={() => confirmDeleteFile(item)} />
-          
-        <Button title="Log Content" onPress={() => logGPXContent(item)} /> 
-        
-          <Button title={(Platform.OS === 'ios' ? "Share" : "Download")} onPress={() => downloadFile(item)} />
+      );
+    };
+    
+
+  const ImportGPXButton = ({ onPress }) => {
+    return (
+      <TouchableOpacity style={styles.importGPXButton} onPress={onPress}>
+        <Image
+          source={require('./assets/icons/plus.png')} 
+          style={styles.iconStyle}
+        />
+      </TouchableOpacity>
+    );
+  };
+
+  const ImportImageButton = ({ onPress }) => {
+    return (
+      <TouchableOpacity style={styles.importImageButton} onPress={onPress}>
+        <Image
+          source={require('./assets/icons/addImage.png')} 
+          style={styles.iconStyle}
+        />
+      </TouchableOpacity>
+    );
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={[
+      styles.itemContainer,
+      expandedItem === item ? styles.expandedItemContainer : null
+    ]}>
+      <TouchableOpacity onPress={() => handleFilePress(item)}>
+        <Text style={expandedItem === item ? styles.expandedItemTitle : styles.itemTitle}>{item}</Text>
+      </TouchableOpacity>
+      {expandedItem === item && (
+        <View style={styles.expandedArea}>
+          <MapPreview fileName={item} directory={activeDirectory} />
+          <View style={styles.buttonContainerHorizontalRight}>
+            <TouchableOpacity onPress={() => handleUseFile(item)} style={styles.button}>
+              <Text style={styles.buttonText}>Use</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => confirmDeleteFile(item, activeDirectory)} style={styles.button}>
+              <Text style={[styles.buttonText, styles.deleteButtonText]}>Delete</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => downloadFile(item, activeDirectory)} style={styles.button}>
+              <Text style={styles.buttonText}>Export</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-      {item === 'mainGPXFile.gpx' && (
-        <View style={{ borderBottomWidth: 1, borderBottomColor: '#ddd', marginVertical: 5 }} />
       )}
     </View>
   );
 
   return (
-    <GestureDetector gesture={twoFlingNav}>
+    <View style={{ flex: 1, position: 'relative' }}> 
       <View style={{ padding: 10 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
+          <Button
+            title="Created Files"
+            onPress={() => changeDirectory('created')}
+            color={activeDirectory === 'created' ? '#007aff' : 'gray'}
+          />
+          <Button
+            title="Imported Files"
+            onPress={() => changeDirectory('imported')}
+            color={activeDirectory === 'imported' ? '#007aff' : 'gray'}
+          />
+        </View>
         <FlatList
           data={gpxFiles}
           renderItem={renderItem}
           keyExtractor={item => item}
+          contentContainerStyle={{ paddingBottom: 100 }} 
+          ListFooterComponent={
+            <>
+              <CloudAnimation />
+              <View style={styles.footerContent}>
+                <Text style={styles.footerText}>Nothing else to show here...</Text>
+                <Image
+                  source={require('./assets/art/cyclistStanding.png')}
+                  style={styles.footerImage}
+                />
+              </View>
+            </>
+          }
         />
-        <Button title="Import GPX File" onPress={importGPXFile} />
-        {/*<Button title="Import Image" onPress={pickImage} />*/}
-        {gpxFiles.length >= 2 && (
-          <Button title="Delete All" onPress={deleteAllFiles} />
-        )}
       </View>
-    </GestureDetector>
+
+      <ImportGPXButton onPress={importGPXFile} />
+      <ImportImageButton onPress={pickImage} />
+
+      <DeleteAllButton
+        onPress={() => deleteAllFiles(activeDirectory)}
+        hasFiles={gpxFiles.length > 0}
+      />
+    </View>
   );
+  
 };
+
+
+const styles = StyleSheet.create({
+  itemContainer: {
+    marginBottom: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  expandedItemContainer: {
+    backgroundColor: '#f0f0f0',
+  },
+  itemTitle: {
+    padding: 10,
+  },
+  expandedItemTitle: {
+    padding: 10,
+    fontSize: 18,
+  },
+  expandedArea: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    padding: 10,
+    paddingTop: 10,
+  },
+  buttonContainerHorizontalRight: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
+    marginTop: 10,
+  },
+  buttonText: {
+    marginHorizontal: 5,
+    fontSize: 18,
+    color: '#007aff',
+  },
+  deleteButtonText: {
+    color: 'red',
+  },
+  deleteAllButton: {
+    position: 'absolute',  
+    bottom: 20,            
+    right: 20,             
+    width: 50,             
+    height: 50,            
+    backgroundColor: 'red', 
+    justifyContent: 'center', 
+    alignItems: 'center',    
+    borderRadius: 10,        
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  importGPXButton: {
+    position: 'absolute',
+    bottom: 20, 
+    right: 80, 
+    width: 50, 
+    height: 50,
+    backgroundColor: '#007aff', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  importImageButton: {
+    position: 'absolute',
+    bottom: 20, 
+    right: 140, 
+    width: 50, 
+    height: 50,
+    backgroundColor: '#007aff', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  iconStyle: {
+    width: 30, 
+    height: 30, 
+    resizeMode: 'contain'
+  },
+  floatingButtonContainer: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10, 
+    width: 50,
+    height: 50
+  },
+  footerContent: {
+    marginTop: 35, 
+    alignItems: 'center', 
+  },
+  footerText: {
+    fontSize: 16, 
+    color: '#666', 
+  },
+  footerImage: {
+    marginTop: 30, 
+    width: screenWidth, 
+    height: 250, 
+    resizeMode: 'stretch', 
+
+  },
+});
 
 export default GPXFileList;

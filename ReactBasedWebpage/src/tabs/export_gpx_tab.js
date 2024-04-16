@@ -28,7 +28,7 @@ const ExportGPXTab = () => {
             <div style={{ overflowY: 'scroll', height: '200px' }}>
                 {files.map((file, index) => (
                     <div key={index}>
-                        <a href={`${serverURL}/uploads/${file}`} download>
+                        <a href={`${serverURL}/download/${file}`} download>
                             {file}
                         </a>
                     </div>
