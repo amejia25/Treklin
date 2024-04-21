@@ -719,6 +719,9 @@ const GPXFileList = ({ navigation }) => {
             <TouchableOpacity onPress={() => downloadFile(item, activeDirectory)} style={styles.button}>
               <Text style={styles.buttonText}>Export</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => logGPXContent(item, activeDirectory)} style={styles.button}>
+            <Text style={styles.buttonText}>Log gpx</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
