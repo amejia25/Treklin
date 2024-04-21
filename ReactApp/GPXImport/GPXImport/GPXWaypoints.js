@@ -392,7 +392,7 @@ const GPXWaypoints = ({ navigation, route }) => {
         latitude: waypointLat,
         longitude: waypointLon,
         name: waypointTitle,
-        description: waypointDescription,
+        desc: waypointDescription,
         rating: waypointRating
       }]);
       showMessage({
@@ -1069,7 +1069,7 @@ const GPXWaypoints = ({ navigation, route }) => {
         latitude: selectedWaypoint.latitude,
         longitude: selectedWaypoint.longitude,
         name: newTitle,
-        description: newDescription,
+        desc: newDescription,
         rating: newRating
       };
       await addWaypointToGPX(currentGPXPath, newWaypoint.latitude, newWaypoint.longitude, newWaypoint.rating, newWaypoint.id, newTitle, newDescription);

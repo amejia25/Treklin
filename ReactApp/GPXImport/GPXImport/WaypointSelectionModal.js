@@ -11,7 +11,7 @@ const WaypointSelectionModal = ({ isVisible, waypoint, onDelete, onUpdate, onCan
     if (waypoint) {
         console.log(waypoint);
       setTitle(waypoint.name || 'No Title');
-      setDescription(waypoint.description || 'No Description');
+      setDescription(waypoint.desc || 'No Description');
       setRating(waypoint.rating);
     }
   }, [waypoint, isVisible]);

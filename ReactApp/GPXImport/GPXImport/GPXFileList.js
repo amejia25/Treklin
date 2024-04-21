@@ -518,7 +518,7 @@ const GPXFileList = ({ navigation }) => {
               latitude: parseFloat(match[1]),
               longitude: parseFloat(match[2]),
               name: match[3],
-              description: match[4],
+              desc: match[4],
               rating: parseInt(match[5], 10),
             });
           }
