@@ -249,8 +249,12 @@ const GPXFileList = ({ navigation }) => {
         // Refresh the file list to show the new file
         refreshFileList();
       } else {
-        // If no file was selected, log an error or handle it appropriately. It currently logs an error. 
-        console.error('No file selected.');
+        // User aborted the file picker, display an alert message
+      Alert.alert(
+        "Import Aborted",
+        "You did not select a file.",
+        [{ text: "OK" }]
+      );
       }
     } catch (error) {
       // If there was an error during the process, log it

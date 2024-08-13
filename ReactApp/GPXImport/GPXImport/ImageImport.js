@@ -12,6 +12,15 @@ export const pickImage = async () => {
         quality: 1,
         exif: true
       });
+      if (result.canceled) {
+        Alert.alert(
+          "Image Selection",
+          "Image selection was canceled.",
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
+        return null;
+      }
     } catch (error) {
       Alert.alert(
         'Photo Error - Selection',
