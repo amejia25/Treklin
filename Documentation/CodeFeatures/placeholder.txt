@@ -1,0 +1,3 @@
+This folder should be used to explicate modules in the code as we go.
+
+This document is to ensure the folder is remembered by git.

@@ -1,0 +1,8 @@
+1. The gpx data on the home tab is changed by file input or being input by another page's navigation (ex: nav from about tab).
+2. the GPXParseLocal component parses this data and returns it to the HomeTab
+3. gpxData is passed to ReactGoogleMapAPI Component from the parent, HomeTab
+4. gpxData is passed to the Routing Component
+5. Routing takes the points and routes the data (skip for waypoints and tracks), returning a usable list of marker coordinates
+6. Markers renders the list of draggable markers for routes and waypoints
+
+NOTE: only make waypoints and routes editable, NOT tracks

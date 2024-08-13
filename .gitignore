@@ -1,0 +1,49 @@
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+
+# Miscellaneous
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Yarn Patch files
+/.pnp/
+.pnp.js
+
+# IDE directories
+.idea/
+.vscode/
+
+# Generated files
+expo-export/
+# Expo OTA updates
+.expo/
+# Expo generated asset files
+/assets.json
+
+# Logss
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Custom assets
+/src/assets/fonts/
+/src/assets/videos/
+
+# Expo prebuild files
+ios/
+android/
+web-build/

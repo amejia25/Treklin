@@ -1,0 +1,196 @@
+ /*TabLoader.css*/
+ /*Coder: Jan Baraniecki*/
+ 
+ /* CSS styles */
+        body {
+            background-color: #3d7537; /* Dark green background */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+ /*This is the Top Menu in Index.html*/
+        #menu {
+            background-color: #1d451b; /* Darker green menu background */
+            color: #fff; /* White text color */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100; /* Make it appear above other content */
+            padding-top: 10px; /* Adjust top padding */
+        }
+
+        #menu h2 {
+            font-size: 2rem;
+
+        }
+
+        #menu ul {
+            list-style: none;
+            padding: 0;
+            display: flex; /* Display menu items horizontally */
+            justify-content: space-around; /* Space them evenly */
+            align-items: center; /* Center items vertically */
+            padding-top: 10px; /* Adjust top padding */
+        }
+
+        #menu li {
+            margin-bottom: 10px;
+        }
+
+        #menu a {
+            color: #fff; /* White text color for menu items */
+            text-decoration: none;
+            font-size: 1.3rem; /* Larger font size */
+            font-weight: bold; /* Bold text */
+        }
+
+        #menu a:hover {
+            text-decoration: underline;
+        }
+
+        #content {
+            margin-top: 150px; /* Adjust margin to align with Main Page */
+            padding: 20px;
+        }
+
+        #infoText {
+            padding: 4px;
+            font-size: 1.15rem;
+        }
+
+        /* Modern button style */
+        .button {
+            background-color: #1d451b; /* Darker green */
+            color: #fff; /* White text color */
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #3d7537; /* Dark green on hover */
+        }
+
+        /* Sticky menu on scroll */
+        .sticky {
+            position: fixed;
+            top: 0;
+            width: 100%;
+        }
+
+        /* Background with white color */
+        #background {
+            background-color: #F5F4E9; /* Light gray background */
+            color: #000; /* Black font color */
+            padding: 0px;
+            overflow-y: visible;
+            height: 100vh; /*height: 100vh;*/ /* Make it fill the viewport height */
+            width: 75%; /* Even narrower width */
+            margin: 0 auto; /* Centered */
+        }
+
+        /*Style for the Google Map Size*/
+        #reactGoogleMap {
+          height: 800px;
+          width: 100%;
+        }
+
+        /*Used for button rendered alongside map*/
+        #secureButtons {
+            height: 40px;
+            width: 100vh;
+            background-color: #1d451b; /* Darker green */
+            color: #fff; /* White text color */
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /*Used for buttons on the menu and edit-component that goes with the map*/
+        #backgroundMenu {
+            align-items: center;
+            background-color: #F5F4E9; /* Light gray background */
+            color: #000; /* Black font color */
+            padding: 20px;
+            overflow-y: visible;
+            height: fit-content; /*height: 100vh;*/ /* Make it fill the viewport height */
+            width: 80%; /* Even narrower width */
+            margin: 0 auto; /* Centered */
+        }
+        #actionMenuButton {
+            height: 60px;
+            width: 600px;
+            background-color: #2d455b;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+        #selectMenuNode {
+            padding: 5px 5px;
+            padding-right: 40px;
+            list-style-type: none;
+        }
+        #selectMenuButton {
+            height: 45px;
+            width: 500px;
+            background-color: #1d451b;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        #instructionListStyleFirst {
+            font-size: 1.5rem;
+            list-style-type: none;
+        }
+        #instructionListStyle {
+            text-align: left;
+        }
+        #absoluteButton {}
+
+        /*Used for better organizing the page*/
+        #horizontalBlock {
+            align-content: left;
+            display: flex;
+        }
+        #halfBlock {
+            padding-top: 10px;
+            width: 50%;
+        }
+
+        .Carousel_App {
+            position: relative; /* Use relative for positioning within the div */
+            width: 30%; /* Width can stay as 50% if that fits your design */
+            margin: 0 auto; /* This centers the div horizontally */
+            z-index: 50;
+            min-height: 525px;
+            max-height: 525px;
+             
+        }
+
+        #pointEditButton {
+            padding: 4px;
+            }
+      
+        
+        /*The Google Map API Container*/
+        /*.mapContainer {
+          position: absolute;   
+         top: 65%;
+         left: 50%;
+         transform: translate(-50%, -50%);  Adjusts the positioning to the exact center 
+         width: 40%;
+         height: 500px;*/
+
+
+
+      
+

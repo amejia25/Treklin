@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<gpx version="1.1" creator="CustomGPXTool">
+  <rte>
+    <name>Custom Route</name>
+    <rtept lat="33.51066555157221" lon="-112.01555550098419">
+      <ele>368.44</ele>
+      <time>2023-10-25T22:31:37Z</time>
+    </rtept>
+    <rtept lat="33.50924355911366" lon="-112.08834829567967">
+      <ele>344.91</ele>
+      <time>2023-10-25T22:48:23Z</time>
+    </rtept>
+    <rtept lat="33.50894575791315" lon="-112.10032939910889">
+      <ele>346.89</ele>
+      <time>2023-10-25T22:51:08Z</time>
+    </rtept>
+    <rtept lat="33.52410254426157" lon="-112.09977436943046">
+      <ele>351.83</ele>
+      <time>2023-10-25T22:55:19Z</time>
+    </rtept>
+    <rtept lat="33.52410980671842" lon="-112.1696499041115">
+      <ele>350.75</ele>
+      <time>2023-10-25T23:11:24Z</time>
+    </rtept>
+    <rtept lat="33.56669905023307" lon="-112.22049246443311">
+      <ele>346.23</ele>
+      <time>2023-10-25T23:28:00Z</time>
+    </rtept>
+    <rtept lat="33.56605413365405" lon="-112.26315021514893">
+      <ele>335.35</ele>
+      <time>2023-10-25T23:37:49Z</time>
+    </rtept>
+    <rtept lat="33.569111965722676" lon="-112.26382361051547">
+      <ele>336.55</ele>
+      <time>2023-10-25T23:38:40Z</time>
+    </rtept>
+    <rtept lat="33.5693980284456" lon="-112.26656216058497">
+      <ele>334.84</ele>
+      <time>2023-10-25T23:39:18Z</time>
+    </rtept>
+  </rte>
+</gpx>

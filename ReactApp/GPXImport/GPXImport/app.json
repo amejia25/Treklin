@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "splash": {
+      "image": "./assets/splash/splash@2x.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E5E7DC" 
+    },
+
+    "name": "Treklin",
+    "slug": "GPXImport",
+    "version": "1.0.5",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "permissions": [
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ],
+      "package": "com.capstone21.GPXImport",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/appIcon.png",
+        "backgroundColor": "#E5E7DC"
+      }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to extract coordinate data; their contents are only accessed when you target them for extraction."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera and save to your Photos library."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
+        }
+      ]
+    ],
+    "extra": {
+      "androidGoogleMapsApiKey": "process.env.GOOGLE_API_ANDROID",
+      "iosGoogleMapsApiKey": "process.env.GOOGLE_API_IOS",
+      "eas": {
+        "projectId": "91f0be04-f2a7-433e-b2f9-3cdaefb99dab"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.capstone21.GPXImport",
+      "icon": "./assets/icons/appIconApple.png"
+    },
+    "owner": "capstoneteam21"
+  }
+}
